@@ -1,0 +1,275 @@
+<html>
+
+<head>
+	<link rel="stylesheet" href="wt_project.css">
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/wt_project.css') }}">
+
+    <link href="https://fonts.googleapis.com/css?family=Mali|PT+Sans" rel="stylesheet">
+    <link href="css/mdb.min.css" rel="stylesheet">
+	<script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+	
+
+    <script type='text/javascript'>
+
+            function sendImage()
+            {
+                alert("TEST")
+            xhr = new XMLHttpRequest();
+            xhr.open("POST","http://localhost:5000/image",true);
+            //xhr.setRequestHeader("Content-type", "multipart/form-data");
+            xhr.setRequestHeader("Content-type", "multipart/form-data")
+            form = new FormData();
+            myFileInput = document.getElementById("img");
+            form.append('userpic', myFileInput.files[0], 'chris.jpg');
+            form.append('username', 'chris.jpg');
+
+            console.log(form)
+
+
+    
+            //image = document.getElementById("img").files[0];
+            console.log(myFileInput.files[0]);
+            xhr.send(form);
+            }
+
+            function submit()
+            {
+                document.getELementById("form").submit();
+            }
+
+            function init()
+            {
+                if(document.cookie.split("=")[0] === "email")
+                {
+                document.getElementById("login-button").innerHTML = document.cookie.split("=")[1];
+                obj.user =  document.cookie.split("=")[1];
+                document.getElementById("history").style.display = 'block';
+
+                }
+
+                var login_button = document.querySelector("#login-button");
+	            login_button.addEventListener("click",slide,"true");
+
+                obj.loginhelp = document.getElementById("loginhelp");
+            }
+
+            function slide(e)
+	{
+		e.preventDefault();
+		console.log("click")
+		thingy1 = document.querySelector(".thingy1");
+		thingy1.setAttribute("class","slide");
+		
+		thingy2 = document.querySelector(".thingy2");
+		thingy2.setAttribute("class","slide");
+
+        obj.loginhelp.style.display = "block";
+		
+		/*thingy3 = document.querySelector(".thingy3");
+		thingy3.setAttribute("class","slide");*/
+		
+	}
+
+    obj = {
+        loginreq : new XMLHttpRequest(),
+        user : null,
+        loginhelp: null,
+
+        login: function() {
+            username = document.getElementById("usr").value;
+            passwd = document.getElementById("pass").value;
+            
+
+            obj.loginreq.open("POST", "http://localhost:5000/login", true);
+            obj.loginreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+
+            postvars = "email=" + username + "&pass=" + passwd;
+            obj.loginreq.onreadystatechange = obj.auth;
+            obj.loginreq.send(postvars);
+
+
+        },
+
+        auth: function() {
+            if (obj.loginreq.readyState == 4 && obj.loginreq.status == 200) {
+                res = JSON.parse(obj.loginreq.responseText);
+
+                if (res.login == "Successful") {
+                    //alert("SUCEESSFUL")
+                    date = new Date();
+                    date.setTime(date.getTime() + 36000000);
+                    document.cookie = "email=" + res.email + ";expires=date.toGMTString()";
+                    document.getElementById("login-button").innerHTML = res.email;
+                    //obj.showHistory();
+                    obj.user = res.email;
+                    document.getElementById("history").style.display = 'block';
+
+                    document.getElementById("usr").style.display = "none";
+                    document.getElementById("pass").style.display = "none";
+                    document.getElementById("cpass").style.display = "none";
+
+                    obj.loginhelp.style.display = "none";
+
+
+
+                    
+
+                    
+                }
+                else{
+                    obj.loginhelp.innerHTML = "We could not verify your credentials";
+                }
+            }
+        },
+
+        signup : function()
+        {
+            username = document.getElementById("usr").value;
+            passwd = document.getElementById("pass").value;
+            cpasswd = document.getElementById("cpass").value;
+
+            if(passwd == cpasswd && passwd!="")
+            {
+            
+            obj.loginreq.open("POST", "http://localhost:5000/signup", true);
+            obj.loginreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+
+            postvars = "email=" + username + "&pass=" + passwd;
+            obj.loginreq.onreadystatechange = obj.signupConfirmed;
+            obj.loginreq.send(postvars);
+            }
+        },
+
+        signupConfirmed : function()
+        {
+            if (obj.loginreq.readyState == 4 && obj.loginreq.status == 200) {
+                 res = JSON.parse(obj.loginreq.responseText);
+
+                 
+                     date = new Date();
+                    date.setTime(date.getTime() + 36000000);
+                    document.cookie = "email=" + res.email + ";expires=date.toGMTString()";
+                    document.getElementById("login-button").innerHTML = res.email;
+                    obj.user = res.email;
+                    document.getElementById("history").style.display = 'block';
+                    //obj.showHistory();
+
+                    document.getElementById("usr").style.display = "none";
+                    document.getElementById("pass").style.display = "none";
+                    document.getElementById("cpass").style.display = "none";
+
+                    obj.loginhelp.style.display = "none";
+
+
+                 
+
+            }
+        },
+
+
+        checkUser: function() {
+            email = document.getElementById("usr").value;
+
+            obj.loginreq.open("POST", "http://localhost:5000/checkUser", true);
+            obj.loginreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+
+            postvars = "email=" + email;
+            obj.loginreq.onreadystatechange = function() {
+                if (obj.loginreq.readyState == 4 && obj.loginreq.status == 200) {
+                    res = JSON.parse(obj.loginreq.responseText)
+                    if (res.userExists != "true")
+                    {
+                        console.log("needs to sign up");
+                        thingy3 = document.querySelector(".thingy3");
+                        thingy3.setAttribute("class","slide");
+
+                        thingy3.addEventListener("blur",obj.signup);
+
+                        obj.loginhelp.innerHTML = "You are not a registered user, please sign up";
+                        
+                        
+
+                    }
+                    else
+                    {
+                        document.getElementById("cpass").setAttribute("class","thingy3");
+                    }
+                    //make the input visible
+
+
+                }
+            };
+            obj.loginreq.send(postvars);
+
+        },
+
+        enter: function(event)
+        {
+            if(event.keyCode == 13)
+                event.target.blur()
+        }
+
+    }
+
+    </script>
+
+
+</head>
+
+<body onload="init()">
+	 <div class="nav">
+        <p class="heading">Equations</p>
+        <a href="" class="nav-item" id="login-button">Login/SignUp</a>
+        <a href="/history" class="nav-item" id="history" style="display:none">History</a>
+        <a href="/upload" class="nav-item">Upload</a>
+        <a href="/" class="nav-item">Home</a>
+
+        
+    </div>
+    <div id="login">
+        <form class="login-form">
+            <input class="thingy1" id="usr" type="text" placeholder="email id" onblur="obj.checkUser()">
+			<br>
+            <input class="thingy2" id="pass" type="password" placeholder="password" onblur="obj.login()" onkeypress="obj.enter(event)" >
+			<br>
+            <input class="thingy3" id="cpass" type="password" placeholder="confirm password" onkeypress="obj.enter(event)">
+        </form>
+
+    </div>
+	<div class="main-div">
+		<div class="input-div effect7">
+    <form id="form" action="/image" method="post" enctype="multipart/form-data" >
+    <input id="img" type='file' accept="image/*" name ='image' onchange="submit()"/>
+		<div class="upload-btn-wrapper">
+            
+  <!--<button class="btn" type="submit">Upload a file</button>-->
+  <!--<input type="file" name="myfile" />-->
+    </div>
+    <!--<input id="img" type='file' accept="image/*" name ='image'/>-->
+    <!--<input class="to-square" type='submit'/>-->
+    </form>
+    
+		</div>
+		 <div class="result-div effect7">
+            <p class="x-var res"> X: </p>
+            <p class="x-val res" id="one"></p>
+            <br>
+            <br>
+            <p class="y-var res">Y:</p>
+            <p class="y-val res" id="two"></p>
+        </div>
+	</div>
+
+    <p class="snackbar" id="loginhelp" style="display:none">
+        Please press enter to login
+    </p>
+    
+	
+
+</body>
+
+</html>
+

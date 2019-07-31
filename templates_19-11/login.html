@@ -1,0 +1,240 @@
+<html>
+
+<head>
+    <title>Making Math less annoying</title>
+    <!--<link rel="stylesheet" href="wt_project.css">-->
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/wt_project.css') }}">
+
+    <link href="https://fonts.googleapis.com/css?family=Mali|PT+Sans" rel="stylesheet">
+    <link href="css/mdb.min.css" rel="stylesheet">
+
+    <script src="https://cdn.plot.ly/plotly-1.35.2.min.js"></script>
+         <script src="https://unpkg.com/mathjs@5.2.3/dist/math.min.js"></script>
+</head>
+
+<script type="text/javascript">
+    obj = {
+        eq1: null,
+
+        x: null,
+        y: null,
+
+        //eq1 : "hello",
+
+        eq2: null,
+
+        server: "http://localhost:5000/solveEq",
+
+        //eq2 : "hello",
+
+        xhr: new XMLHttpRequest(),
+        loginreq: new XMLHttpRequest(),
+
+        checkEqs: function(event) {
+
+            if (obj.eq1.value.length > 2)
+                return true;
+            return false;
+        },
+
+        superscript: function(event) {
+            //alert(obj.eq1.value[obj.eq1.value.length-1]);
+            if (obj.eq1.value[obj.eq1.value.length - 1] >= 'a') {
+                obj.server = "http://localhost:5000/solveEqQuad";
+
+                obj.eq1.value = obj.eq1.value + "\u00B2";
+
+                obj.eq2.style.display = 'none';
+                //event.target.style.display='none';
+            }
+
+            obj.eq1.focus();
+            //obj.x.innerHTML = 'hllo\u00B2';
+
+        },
+
+        sendEqs: function(event) {
+
+            if (obj.checkEqs()) {
+                obj.xhr.open("POST", obj.server, true);
+                ///alert(document.cookie);
+                email = document.cookie.split("=")[1];
+                //alert(email);
+
+                postvars = "eq1=" + obj.eq1.value.replace(/\+/g, "\%2B") + "&eq2=" + obj.eq2.value.replace(/\+/g, "\%2B")+"&email="+email;
+                obj.xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+                obj.xhr.onreadystatechange = obj.dispSoln;
+                obj.xhr.send(postvars);
+
+            }
+        },
+
+        dispSoln: function() {
+            if (obj.xhr.readyState == 4 && obj.xhr.status == 200) {
+                resp = JSON.parse(obj.xhr.responseText);
+                x = resp.x;
+                y = resp.y;
+
+                //alert("X : "+x+"Y : "+y);
+                obj.x.innerHTML = x;
+                obj.y.innerHTML = y;
+
+                obj.plot(x,resp.m1,resp.m2,resp.c1,resp.c2);
+
+            }
+        },
+
+        init: function() {
+            obj.eq1 = document.getElementById("eq1");
+            obj.eq2 = document.getElementById("eq2");
+            obj.x = document.getElementById("one");
+            obj.y = document.getElementById("two");
+
+
+        },
+
+        plot: function(x,m1,m2,c1,c2)
+    {
+        x1val = math.range(x-10, x+10, 0.5).toArray();
+        y1val = x1val.map(function (x) {
+        return -m1*x+c1;
+      });
+            
+        var trace1 = {
+            x: x1val,
+            y: y1val,
+        type: 'scatter',
+        name : eq1.value
+        };
+
+        x2val = math.range(x-10, x+10, 0.5).toArray();
+        y2val = x2val.map(function (x) {
+        return -m2*x+c2;
+        });
+
+        var trace2 = {
+        x: x2val,
+        y: y2val,
+        type: 'scatter',
+        name : eq2.value
+        };
+
+        var data = [trace1, trace2];
+
+        Plotly.newPlot('plot', data);
+
+    },
+
+
+        login: function()
+        {
+            username = document.getElementById("usr").value;
+            passwd = document.getElementById("pass").value;
+
+            obj.loginreq.open("POST", "http://localhost:5000/login", true);
+            obj.loginreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+
+            postvars = "email="+username+"&pass="+passwd;
+            obj.loginreq.onreadystatechange = obj.auth;
+            obj.loginreq.send(postvars);
+
+
+        },
+
+        auth: function()
+        {
+            if(obj.loginreq.readyState == 4 &&  obj.loginreq.status == 200)
+            {
+                res = JSON.parse(obj.loginreq.responseText);
+       
+                if(res.login == "Successful")
+                {
+                    //alert("SUCEESSFUL")
+                    date = new Date();
+                    date.setTime(date.getTime() + 36000000);
+                    document.cookie = "email="+res.email+";expires=date.toGMTString()";
+                    document.getElementById("login").innerHTML = res.email;
+                    obj.showHistory();
+                };
+            }
+        },
+
+        checkUser : function()
+        {
+            email = document.getElementById("usr").value;
+            
+            obj.loginreq.open("POST", "http://localhost:5000/checkUser", true);
+            obj.loginreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+
+            postvars = "email="+email;
+            obj.loginreq.onreadystatechange = function()
+            {
+                if(obj.loginreq.readyState == 4 &&  obj.loginreq.status == 200)
+                {
+                    res = JSON.parse(obj.loginreq.responseText)
+                    if(res.userexists != "true")
+                        console.log("hello");
+                        //make the input visible
+
+
+                }
+            };
+            obj.loginreq.send(postvars);
+
+        },
+
+        
+    
+
+
+    }
+</script>
+
+<body onload="obj.init()">
+    <div class="nav">
+        <p class="heading">Equations</p>
+        <a href="" class="nav-item"  id="login">History</a>
+        <a href="/history" class="nav-item">History</a>
+        <a href="/history" class="nav-item">History</a>
+        <a href="/history" class="nav-item">History</a>
+
+    </div>
+
+    <div id="login">
+        <form class="login-form">
+            <input id="usr" type="text" placeholder="email id" onblur="obj.checkUser()">
+            <input id="pass" type="password" placeholder="password" onblur="obj.login()">
+            <input id="cpass" type="password" placeholder="confirm password">
+        </form>
+    </div>
+
+    <div class="main-div effect8">
+
+        <div class="input-div effect7">
+            <div class="md-form">
+                <textarea type="text" id="eq1" class="input-box md-textarea form-control" rows="1" onkeyup="obj.sendEqs(event)"></textarea>
+                <input type="button" class="to-square effect8 " value="x^2 " onclick = "obj.superscript()">
+            </div>
+            <div class="md-form">
+                <textarea type="text" id="eq2" class="input-box md-textarea form-control" rows="1" onkeyup="obj.sendEqs(event)"> </textarea>
+            </div>
+            <br>
+        </div>
+
+        <div class="result-div effect7">
+            <br>
+            <p class="x-var res"> X: </p>
+            <p class="x-val res" id="one"></p>
+            <br>
+            <br>
+            <p class="y-var res">Y:</p>
+            <p class="y-val res" id="two"></p>
+        </div>
+
+       
+    </div>
+     <div id="plot"></div>
+
+</body>
+
+</html>

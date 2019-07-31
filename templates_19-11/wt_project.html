@@ -1,0 +1,132 @@
+<html>
+
+<head>
+    <script type="text/javascript">
+        obj = {
+    eq1 : null,
+
+    x : null,
+    y: null,
+
+    //eq1 : "hello",
+    
+    eq2 : null ,
+
+    server : "http://localhost:5000/solveEq",
+
+    //eq2 : "hello",
+
+    xhr : new XMLHttpRequest(),
+
+    checkEqs : function(event)
+    {
+
+        if(obj.eq1.value.length > 2 )
+            return true;
+        return false;
+    },
+
+    superscript: function(event)
+    {
+        //alert(obj.eq1.value[obj.eq1.value.length-1]);
+        if(obj.eq1.value[obj.eq1.value.length-1] >= 'a' )
+        {
+        obj.server = "http://localhost:5000/solveEqQuad";
+
+        obj.eq1.value = obj.eq1.value+"\u00B2";
+        
+        obj.eq2.style.display='none';
+        //event.target.style.display='none';
+        }
+
+        obj.eq1.focus();
+        //obj.x.innerHTML = 'hllo\u00B2';
+
+    },
+
+    sendEqs : function(event)
+    {
+
+        if(obj.checkEqs())
+        {
+            obj.xhr.open("POST",obj.server,true);
+            postvars = "eq1="+obj.eq1.value.replace(/\+/g,"\%2B")+"&eq2="+obj.eq2.value.replace(/\+/g,"\%2B");
+            obj.xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+            obj.xhr.onreadystatechange = obj.dispSoln;
+            obj.xhr.send(postvars);
+
+        }
+    },
+
+    dispSoln : function()
+    {
+        if(obj.xhr.readyState == 4 && obj.xhr.status == 200)
+        {
+            resp = JSON.parse(obj.xhr.responseText);
+            x = resp.x;
+            y = resp.y;
+
+            //alert("X : "+x+"Y : "+y);
+            obj.x.innerHTML = x;
+            obj.y.innerHTML = y;
+        }
+    },
+
+    init: function()
+    {
+        obj.eq1 = document.getElementById("eq1");
+        obj.eq2 = document.getElementById("eq2");
+        obj.x = document.getElementById("one");
+        obj.y = document.getElementById("two");
+
+
+    }
+
+
+}
+
+</script>
+    <title>Making Math less annoying</title>
+    <link rel="stylesheet" href="wt_project.css">
+    <link href="https://fonts.googleapis.com/css?family=Mali|PT+Sans" rel="stylesheet">
+    <link href="css/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="nav">
+        <p class="heading">Equations</p>
+        <a href="" class="nav-item">History</a>
+        <a href="" class="nav-item">History</a>
+        <a href="" class="nav-item">History</a>
+        <a href="" class="nav-item">History</a>
+
+    </div>
+
+    <div class="main-div effect8">
+
+        <div class="input-div effect7">
+            <div class="md-form">
+                <textarea type="text" id="form7" class="input-box md-textarea form-control" rows="1"></textarea>
+                <input type="button" class="to-square effect8 " value="x^2 ">
+            </div>
+            <div class="md-form">
+                <textarea type="text" id="form7" class="input-box md-textarea form-control" rows="1"></textarea>
+            </div>
+            <br>
+            <input type="button" class="button effect8" id="calculate " value="Calculate ">
+        </div>
+
+        <div class="result-div effect7">
+            <br>
+            <p class="x-var res"> X: </p>
+            <p class="x-val res">12</p>
+            <br>
+            <br>
+            <p class="y-var res">Y:</p>
+            <p class="y-val res">12</p>
+        </div>
+    </div>
+
+</body>
+
+</html>

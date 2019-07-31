@@ -1,0 +1,32 @@
+<html>
+
+<head>
+
+    <script type='text/javascript'>
+
+            function sendImage()
+            {
+            xhr = new XMLHttpRequest();
+            xhr.open("POST","http://localhost:5000/image",true);
+            xhr.setRequestHeader("Content-type", "multipart/form-data");
+            image = document.getElementById("img").files[0];
+            console.log(image);
+            xhr.send("image="+image);
+            }
+
+    </script>
+
+
+</head>
+
+<body>
+
+    <form action="/image" method="post" enctype="multipart/form-data" >
+    <input id="img" type='file' accept="image/*" name ='image'/>
+    <input type='submit'/>
+    </form>
+
+</body>
+
+</html>
+

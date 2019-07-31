@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://cdn.plot.ly/plotly-1.35.2.min.js"></script>
+         <script src="https://unpkg.com/mathjs@5.2.3/dist/math.min.js"></script>
+
+        <script type="text/javascript">
+    obj = {
+    eq1 : null,
+
+    x : null,
+    y: null,
+
+    //eq1 : "hello",
+    
+    eq2 : null ,
+
+    server : "http://localhost:5000/solveEq",
+
+    //eq2 : "hello",
+
+    xhr : new XMLHttpRequest(),
+
+    checkEqs : function(event)
+    {
+
+        if(obj.eq1.value.length > 2 )
+            return true;
+        return false;
+    },
+
+    superscript: function(event)
+    {
+        //alert(obj.eq1.value[obj.eq1.value.length-1]);
+        if(obj.eq1.value[obj.eq1.value.length-1] >= 'a' )
+        {
+        obj.server = "http://localhost:5000/solveEqQuad";
+
+        obj.eq1.value = obj.eq1.value+"\u00B2";
+        
+        obj.eq2.style.display='none';
+        //event.target.style.display='none';
+        }
+
+        obj.eq1.focus();
+        //obj.x.innerHTML = 'hllo\u00B2';
+
+    },
+
+    sendEqs : function(event)
+    {
+
+        if(obj.checkEqs())
+        {
+            obj.xhr.open("POST",obj.server,true);
+            postvars = "eq1="+obj.eq1.value.replace(/\+/g,"\%2B")+"&eq2="+obj.eq2.value.replace(/\+/g,"\%2B");
+            obj.xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+            obj.xhr.onreadystatechange = obj.dispSoln;
+            obj.xhr.send(postvars);
+
+        }
+    },
+
+    dispSoln : function()
+    {
+        if(obj.xhr.readyState == 4 && obj.xhr.status == 200)
+        {
+            resp = JSON.parse(obj.xhr.responseText);
+            x = resp.x;
+            y = resp.y;
+
+            //alert("X : "+x+"Y : "+y);
+            obj.x.innerHTML = x;
+            obj.y.innerHTML = y;
+
+            obj.plot(x,resp.m1,resp.m2,resp.c1,resp.c2);
+        }
+    },
+
+    init: function()
+    {
+        obj.eq1 = document.getElementById("eq1");
+        obj.eq2 = document.getElementById("eq2");
+        obj.x = document.getElementById("one");
+        obj.y = document.getElementById("two");
+
+
+    },
+
+    plot: function(x,m1,m2,c1,c2)
+    {
+        x1val = math.range(x-10, x+10, 0.5).toArray();
+        y1val = x1val.map(function (x) {
+        return -m1*x+c1;
+      });
+            
+        var trace1 = {
+            x: x1val,
+            y: y1val,
+        type: 'scatter',
+        name : eq1.value
+        };
+
+        x2val = math.range(x-10, x+10, 0.5).toArray();
+        y2val = x2val.map(function (x) {
+        return -m2*x+c2;
+        });
+
+        var trace2 = {
+        x: x2val,
+        y: y2val,
+        type: 'scatter',
+        name : eq2.value
+        };
+
+        var data = [trace1, trace2];
+
+        Plotly.newPlot('plot', data);
+
+    }
+
+
+
+}
+
+</script>
+    </head>
+    <body onload = "obj.init()">
+
+        <form>
+        <input type="text" id="eq1" onkeyup = "obj.sendEqs(event)"/>
+        <input type="text" id="eq2" onkeyup = "obj.sendEqs(event)"/>
+        <input type="button" value="^2" onclick="obj.superscript(event)"/>
+        </form>
+
+        <h1 id="one" ></h1>
+        <h1 id="two" ></h1>
+
+        <div id="plot"></div>
+
+
+
+    </body>
+</html>
+
+

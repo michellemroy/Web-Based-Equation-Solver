@@ -1,0 +1,428 @@
+<html>
+
+<head>
+    <title>Making Math less annoying</title>
+    <link rel="stylesheet" href="wt_project.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/wt_project.css') }}">
+
+    <link href="https://fonts.googleapis.com/css?family=Mali|PT+Sans" rel="stylesheet">
+    <link href="css/mdb.min.css" rel="stylesheet">
+
+    <script src="https://cdn.plot.ly/plotly-1.35.2.min.js"></script>
+    <script src="https://unpkg.com/mathjs@5.2.3/dist/math.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+</head>
+
+<script type="text/javascript">
+    obj = {
+        user: null,
+        eq1: null,
+
+        x: null,
+        y: null,
+
+        //eq1 : "hello",
+
+        eq2: null,
+        timer: null,
+        loginhelp: null,
+
+        server: "http://localhost:5000/solveEq",
+
+        //eq2 : "hello",
+
+        xhr: new XMLHttpRequest(),
+        loginreq: new XMLHttpRequest(),
+
+        checkEqs: function(event) {
+
+            if (obj.eq1.value.length > 2)
+                return true;
+            return false;
+        },
+
+        superscript: function(event) {
+            //alert(obj.eq1.value[obj.eq1.value.length-1]);
+            if (obj.eq1.value[obj.eq1.value.length - 1] >= 'a') {
+                obj.server = "http://localhost:5000/solveEqQuad";
+
+                obj.eq1.value = obj.eq1.value + "\u00B2";
+
+                obj.eq2.style.display = 'none';
+                //event.target.style.display='none';
+            }
+
+            obj.eq1.focus();
+            //obj.x.innerHTML = 'hllo\u00B2';
+
+        },
+
+        sendEqs: function(event) {
+
+            if (obj.checkEqs()) {
+                obj.xhr.open("POST", obj.server, true);
+                ///alert(document.cookie);
+                email = document.cookie.split("=")[1];
+                //alert(email);
+
+                postvars = "eq1=" + obj.eq1.value.replace(/\+/g, "\%2B") + "&eq2=" + obj.eq2.value.replace(/\+/g, "\%2B") + "&email=" + email;
+                obj.xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+                obj.xhr.onreadystatechange = obj.dispSoln;
+                obj.xhr.send(postvars);
+
+            }
+        },
+
+        dispSoln: function() {
+            if (obj.xhr.readyState == 4 && obj.xhr.status == 500) {
+                if (eq1.value != "" && eq2.value != "")
+                    if (obj.timer == null)
+                    {
+                        obj.timer = setTimeout(obj.showparallel, 5000);
+                        
+
+                    }
+            }
+
+            if (obj.xhr.readyState == 4 && obj.xhr.status == 200) {
+                resp = JSON.parse(obj.xhr.responseText);
+                x = resp.x;
+                y = resp.y;
+
+                //alert("X : "+x+"Y : "+y);
+                obj.x.innerHTML = x;
+                obj.y.innerHTML = y;
+
+                obj.plot(x, resp.m1, resp.m2, resp.c1, resp.c2);
+
+                //alert(obj.user);
+
+                if (obj.timer != null)
+                {
+                    clearTimeout(obj.timer);
+                    obj.timer = null;
+                
+                }
+
+                if (obj.user == null)
+                    obj.shownologin();
+
+            }
+        },
+
+        init: function() {
+            obj.eq1 = document.getElementById("eq1");
+            obj.eq2 = document.getElementById("eq2");
+            obj.x = document.getElementById("one");
+            obj.y = document.getElementById("two");
+            obj.loginhelp = document.getElementById("loginhelp");
+
+
+            if (document.cookie.split("=")[0] === "email") {
+                document.getElementById("login-button").innerHTML = document.cookie.split("=")[1];
+                document.getElementById("history").style.display = 'block';
+                obj.user = document.cookie.split("=")[1];
+            }
+
+            {%if text %}
+
+                obj.eq1.value = {{text[0] | tojson}} 
+                {%if text[1] %}
+                obj.eq2.value = {{ text[1] | tojson}}
+
+
+
+                   
+                
+                {%else %}
+                obj.server = "http://localhost:5000/solveEqQuad";
+                obj.eq2.style.display = 'none'; 
+                {% endif %}
+
+                
+            {% endif %}
+
+            {%if m1%}
+            obj.plot({{x}},{{m1}},{{m2}},{{c1}},{{c2}});
+
+            {%endif%}
+
+
+
+
+
+        },
+
+        plot: function(x, m1, m2, c1, c2) {
+            if (x < 0)
+                x1val = math.range(x - 10, x + 10, 0.5).toArray();
+            else
+                x1val = math.range(x - 10, x + 10, 0.5).toArray();
+            y1val = x1val.map(function(x) {
+                return -m1 * x + c1;
+            });
+
+            var trace1 = {
+                x: x1val,
+                y: y1val,
+                type: 'scatter',
+                name: eq1.value
+            };
+
+            x2val = math.range(x - 10, x + 10, 0.5).toArray();
+            y2val = x2val.map(function(x) {
+                return -m2 * x + c2;
+            });
+
+            var trace2 = {
+                x: x2val,
+                y: y2val,
+                type: 'scatter',
+                name: eq2.value
+            };
+
+            var data = [trace1, trace2];
+
+            Plotly.newPlot('plot', data);
+
+        },
+
+
+        login: function() {
+            username = document.getElementById("usr").value;
+            passwd = document.getElementById("pass").value;
+            
+
+            obj.loginreq.open("POST", "http://localhost:5000/login", true);
+            obj.loginreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+
+            postvars = "email=" + username + "&pass=" + passwd;
+            obj.loginreq.onreadystatechange = obj.auth;
+            obj.loginreq.send(postvars);
+
+
+        },
+
+        auth: function() {
+            if (obj.loginreq.readyState == 4 && obj.loginreq.status == 200) {
+                res = JSON.parse(obj.loginreq.responseText);
+
+                if (res.login == "Successful") {
+                    //alert("SUCEESSFUL")
+                    date = new Date();
+                    date.setTime(date.getTime() + 36000000);
+                    document.cookie = "email=" + res.email + ";expires=date.toGMTString()";
+                    document.getElementById("login-button").innerHTML = res.email;
+                    //obj.showHistory();
+                    obj.user = res.email;
+                    document.getElementById("history").style.display = 'block';
+
+                    document.getElementById("usr").style.display = "none";
+                    document.getElementById("pass").style.display = "none";
+                    document.getElementById("cpass").style.display = "none";
+
+                    obj.loginhelp.style.display = "none";
+
+
+
+                    
+
+                    
+                }
+                else{
+                    obj.loginhelp.innerHTML = "We could not verify your credentials";
+                }
+            }
+        },
+
+        signup : function()
+        {
+            username = document.getElementById("usr").value;
+            passwd = document.getElementById("pass").value;
+            cpasswd = document.getElementById("cpass").value;
+
+            if(passwd == cpasswd && passwd!="")
+            {
+            
+            obj.loginreq.open("POST", "http://localhost:5000/signup", true);
+            obj.loginreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+
+            postvars = "email=" + username + "&pass=" + passwd;
+            obj.loginreq.onreadystatechange = obj.signupConfirmed;
+            obj.loginreq.send(postvars);
+            }
+        },
+
+        signupConfirmed : function()
+        {
+            if (obj.loginreq.readyState == 4 && obj.loginreq.status == 200) {
+                 res = JSON.parse(obj.loginreq.responseText);
+
+                 
+                     date = new Date();
+                    date.setTime(date.getTime() + 36000000);
+                    document.cookie = "email=" + res.email + ";expires=date.toGMTString()";
+                    document.getElementById("login-button").innerHTML = res.email;
+                    obj.user = res.email;
+                    document.getElementById("history").style.display = 'block';
+                    //obj.showHistory();
+
+                    document.getElementById("usr").style.display = "none";
+                    document.getElementById("pass").style.display = "none";
+                    document.getElementById("cpass").style.display = "none";
+
+                    obj.loginhelp.style.display = "none";
+
+
+                 
+
+            }
+        },
+
+
+        checkUser: function() {
+            email = document.getElementById("usr").value;
+
+            obj.loginreq.open("POST", "http://localhost:5000/checkUser", true);
+            obj.loginreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+
+            postvars = "email=" + email;
+            obj.loginreq.onreadystatechange = function() {
+                if (obj.loginreq.readyState == 4 && obj.loginreq.status == 200) {
+                    res = JSON.parse(obj.loginreq.responseText)
+                    if (res.userExists != "true")
+                    {
+                        console.log("needs to sign up");
+                        thingy3 = document.querySelector(".thingy3");
+                        thingy3.setAttribute("class","slide");
+
+                        thingy3.addEventListener("blur",obj.signup);
+
+                        obj.loginhelp.innerHTML = "You are not a registered user, please sign up";
+                        
+                        
+
+                    }
+                    else
+                    {
+                        document.getElementById("cpass").setAttribute("class","thingy3");
+                    }
+                    //make the input visible
+
+
+                }
+            };
+            obj.loginreq.send(postvars);
+
+        },
+
+        shownologin: function() {
+            //alert("nologin");
+            document.getElementById("nologin").style.display = "block";
+             
+        },
+
+        showparallel: function() {
+
+            //alert("parallel");
+            document.getElementById("parallel").style.display = "block";
+            obj.timer = null;
+        },
+
+        enter: function(event)
+        {
+            if(event.keyCode == 13)
+                event.target.blur()
+        }
+
+        
+
+
+
+
+
+    }
+</script>
+
+<body onload="obj.init()">
+    <div class="nav">
+        <p class="heading">Equations</p>
+        <a href="" class="nav-item" id="login-button">Login/SignUp</a>
+        <a href="/history" id="history" class="nav-item" style="display:none">History</a>
+        <a href="/upload" class="nav-item">Upload</a>
+        <a href="/" class="nav-item">Home</a>
+
+    </div>
+
+    <div id="login">
+        <form class="login-form" autocomplete="off">
+            <input class="thingy1" id="usr" type="text" placeholder="email id" onblur="obj.checkUser()" autocomplete="false">
+            <br>
+            <input class="thingy2" id="pass" type="password" placeholder="password" onblur="obj.login()" onkeypress = "obj.enter(event)">
+            <br>
+            <input class="thingy3" id="cpass" type="password" placeholder="confirm password" onkeypress = "obj.enter(event)">
+            <br>
+        </form>
+    </div>
+
+    <div class="main-div effect8">
+
+        <div class="input-div effect7">
+            <div class="md-form">
+                <input type="text" id="eq1" class="input-box md-textarea form-control" rows="1" onkeyup="obj.sendEqs(event)"></textarea>
+                <input type="button" class="to-square effect8 " value="x^2 " onclick="obj.superscript()">
+            </div>
+            <div class="md-form">
+                <textarea type="text" id="eq2" class="input-box md-textarea form-control" rows="1" onkeyup="obj.sendEqs(event)"></textarea>
+            </div>
+            <br>
+        </div>
+
+        <div class="result-div effect7">
+
+            <p class="x-var res"> X: </p>
+            <p class="x-val res" id="one">{%if x%}{{x}}{%endif%}</p>
+            <br>
+            <br>
+            <p class="y-var res">Y:</p>
+            <p class="y-val res" id="two">{%if y%}{{y}}{%endif%}</p>
+        </div>
+
+
+    </div>
+    <p class="snackbar" id="nologin" style="display:none">
+        Log in to save your equations
+    </p>
+    <p class="snackbar" id="parallel" style="display:none">
+        The equations given are not valid and cannot be solved 
+    </p>
+    <p class="snackbar" id="loginhelp" style="display:none">
+        Please press enter to login
+    </p>
+    <div id="plot"></div>
+
+</body>
+<script>
+    var login_button = document.querySelector("#login-button");
+    login_button.addEventListener("click", slide, "true");
+
+    function slide(e) {
+        e.preventDefault();
+        console.log("click")
+        thingy1 = document.querySelector(".thingy1");
+        thingy1.setAttribute("class", "slide");
+
+        thingy2 = document.querySelector(".thingy2");
+        thingy2.setAttribute("class", "slide");
+
+        obj.loginhelp.style.display = "block";
+        
+
+        /*thingy3 = document.querySelector(".thingy3");
+        thingy3.setAttribute("class","slide");*/
+
+    }
+</script>
+
+</html>
